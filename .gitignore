@@ -1,0 +1,8 @@
+.env
+.gocache*/
+mysql-data/
+musicbox-backend/uploads/
+musicbox-backend/config/config.local.yaml
+musicbox-backend/config/config.prod.yaml
+musicbox-frontend/node_modules/
+musicbox-frontend/dist/

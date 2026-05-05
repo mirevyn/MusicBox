@@ -1,0 +1,5 @@
+services:
+
+  mysql:
+    volumes:
+      - ./musicbox-backend/musicbox.demo.sql:/docker-entrypoint-initdb.d/02-demo.sql:ro

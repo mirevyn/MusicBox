@@ -1,0 +1,35 @@
+{
+  "name": "musicbox-frontend",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "typecheck": "vue-tsc -b",
+    "build": "vue-tsc -b && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@vueuse/core": "^14.2.1",
+    "axios": "^1.14.0",
+    "echarts": "^6.0.0",
+    "pinia": "^3.0.4",
+    "sortablejs": "^1.15.7",
+    "vue": "^3.5.31",
+    "vue-echarts": "^8.0.1",
+    "vue-router": "^4.6.4"
+  },
+  "devDependencies": {
+    "@iconify-json/fa6-regular": "^1.2.4",
+    "@iconify-json/fa6-solid": "^1.2.4",
+    "@iconify-json/mdi": "^1.2.3",
+    "@types/node": "^24.12.0",
+    "@types/sortablejs": "^1.15.9",
+    "@vitejs/plugin-vue": "^6.0.5",
+    "@vue/tsconfig": "^0.8.1",
+    "typescript": "~5.9.3",
+    "unocss": "^66.6.7",
+    "vite": "^8.0.3",
+    "vue-tsc": "^3.2.6"
+  }
+}

@@ -1,0 +1,10 @@
+.git
+.gitignore
+.vscode
+uploads
+musicbox.sql
+*.log
+.env
+.gocache*
+config/config.local.yaml
+config/config.prod.yaml

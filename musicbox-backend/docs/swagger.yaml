@@ -1,0 +1,1435 @@
+basePath: /api
+definitions:
+  model.Playlist:
+    properties:
+      coverUrl:
+        type: string
+      createdAt:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+      isPublic:
+        type: boolean
+      playCount:
+        type: integer
+      rejectReason:
+        type: string
+      songCount:
+        description: 统计字段
+        type: integer
+      status:
+        type: integer
+      title:
+        type: string
+      user:
+        allOf:
+        - $ref: '#/definitions/model.User'
+        description: 关联关系
+      userId:
+        type: integer
+    type: object
+  model.Song:
+    properties:
+      album:
+        type: string
+      artist:
+        type: string
+      coverUrl:
+        type: string
+      duration:
+        type: integer
+      fileUrl:
+        type: string
+      id:
+        type: integer
+      lyricUrl:
+        type: string
+      title:
+        type: string
+      uploadAt:
+        type: string
+    type: object
+  model.User:
+    properties:
+      avatarUrl:
+        type: string
+      createdAt:
+        type: string
+      id:
+        type: integer
+      role:
+        type: string
+      status:
+        type: integer
+      username:
+        type: string
+    type: object
+  utils.Response:
+    properties:
+      code:
+        type: integer
+      data: {}
+      msg:
+        type: string
+    type: object
+  v1.AIChatRequest:
+    properties:
+      apiKey:
+        type: string
+      baseUrl:
+        type: string
+      messages:
+        items:
+          $ref: '#/definitions/v1.ChatMessageRequest'
+        type: array
+      model:
+        type: string
+      provider:
+        type: string
+    required:
+    - messages
+    type: object
+  v1.AddSongReq:
+    properties:
+      songId:
+        type: integer
+    required:
+    - songId
+    type: object
+  v1.ChangePasswordRequest:
+    properties:
+      newPassword:
+        minLength: 6
+        type: string
+      oldPassword:
+        type: string
+    required:
+    - newPassword
+    - oldPassword
+    type: object
+  v1.ChatMessageRequest:
+    properties:
+      content:
+        type: string
+      role:
+        type: string
+    type: object
+  v1.CreateUserRequest:
+    properties:
+      password:
+        minLength: 6
+        type: string
+      role:
+        description: 非必填, 默认为 "User"
+        type: string
+      username:
+        minLength: 3
+        type: string
+    required:
+    - password
+    - username
+    type: object
+  v1.LoginRequest:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    required:
+    - password
+    - username
+    type: object
+  v1.RecordPlayHistoryReq:
+    properties:
+      duration:
+        type: integer
+      songId:
+        type: integer
+      source:
+        type: string
+    required:
+    - songId
+    type: object
+  v1.RegisterRequest:
+    properties:
+      password:
+        minLength: 6
+        type: string
+      username:
+        maxLength: 30
+        minLength: 3
+        type: string
+    required:
+    - password
+    - username
+    type: object
+  v1.UpdatePlaylistStatusReq:
+    properties:
+      rejectReason:
+        type: string
+      status:
+        description: 1-通过, 2-驳回
+        enum:
+        - 1
+        - 2
+        type: integer
+    type: object
+  v1.UpdateSettingsRequest:
+    properties:
+      allowRegister:
+        type: boolean
+    type: object
+  v1.UpdateUserRequest:
+    properties:
+      password:
+        type: string
+      role:
+        type: string
+      status:
+        type: integer
+      username:
+        type: string
+    type: object
+info:
+  contact: {}
+  description: MusicBox 音乐盒后端 API 文档
+  title: MusicBox API
+  version: "1.0"
+paths:
+  /admin/dashboard/analytics:
+    get:
+      consumes:
+      - application/json
+      description: 获取用于图表展示的分析趋势数据
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/utils.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 获取分析数据
+      tags:
+      - 管理员模块
+  /admin/dashboard/export:
+    get:
+      description: 下载包含系统统计信息的 CSV 报告
+      produces:
+      - text/csv
+      responses:
+        "200":
+          description: CSV 报告文件
+          schema:
+            type: file
+      security:
+      - ApiKeyAuth: []
+      summary: 导出仪表盘报告
+      tags:
+      - 管理员模块
+  /admin/dashboard/stats:
+    get:
+      consumes:
+      - application/json
+      description: 获取系统总用户数、音频数、播放历史等统计数据
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/utils.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 获取仪表盘统计
+      tags:
+      - 管理员模块
+  /admin/playlists:
+    get:
+      consumes:
+      - application/json
+      description: 管理员分页查询系统中的所有歌单
+      parameters:
+      - description: 关键字
+        in: query
+        name: keyword
+        type: string
+      - default: -1
+        description: 状态 (0-待审核, 1-已通过, 2-已驳回)
+        in: query
+        name: status
+        type: integer
+      - default: 1
+        description: 页码
+        in: query
+        name: pageIndex
+        type: integer
+      - default: 10
+        description: 每页数量
+        in: query
+        name: pageSize
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/utils.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 管理员获取歌单列表
+      tags:
+      - 管理员模块
+  /admin/playlists/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: 管理员强制删除指定的歌单
+      parameters:
+      - description: 歌单 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 删除成功
+          schema:
+            $ref: '#/definitions/utils.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 管理员删除歌单
+      tags:
+      - 管理员模块
+    get:
+      consumes:
+      - application/json
+      description: 管理员查看歌单的详细信息及包含的歌曲
+      parameters:
+      - description: 歌单 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            $ref: '#/definitions/utils.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 管理员获取歌单详情
+      tags:
+      - 管理员模块
+  /admin/playlists/{id}/status:
+    put:
+      consumes:
+      - application/json
+      description: 管理员对歌单进行审核通过或驳回操作
+      parameters:
+      - description: 歌单 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 审核信息
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/v1.UpdatePlaylistStatusReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 操作成功
+          schema:
+            $ref: '#/definitions/utils.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 审核歌单
+      tags:
+      - 管理员模块
+  /admin/settings:
+    get:
+      consumes:
+      - application/json
+      description: 管理员获取系统全局配置（如是否开放注册）
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            $ref: '#/definitions/utils.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 获取系统设置
+      tags:
+      - 系统模块
+    put:
+      consumes:
+      - application/json
+      description: 管理员修改系统全局配置
+      parameters:
+      - description: 设置信息
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/v1.UpdateSettingsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 保存成功
+          schema:
+            $ref: '#/definitions/utils.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 更新系统设置
+      tags:
+      - 系统模块
+  /admin/users:
+    get:
+      consumes:
+      - application/json
+      description: 管理员分页查询系统用户
+      parameters:
+      - description: 用户名关键字
+        in: query
+        name: keyword
+        type: string
+      - description: 角色过滤
+        in: query
+        name: role
+        type: string
+      - default: 1
+        description: 页码
+        in: query
+        name: pageIndex
+        type: integer
+      - default: 10
+        description: 每页数量
+        in: query
+        name: pageSize
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/utils.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 获取用户列表
+      tags:
+      - 用户管理
+    post:
+      consumes:
+      - application/json
+      description: 管理员手动创建新用户账号
+      parameters:
+      - description: 创建用户请求体
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/v1.CreateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: 成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.User'
+              type: object
+        "409":
+          description: 用户名已存在
+          schema:
+            $ref: '#/definitions/utils.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 创建用户
+      tags:
+      - 用户管理
+  /admin/users/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: 管理员彻底删除系统中的用户账号
+      parameters:
+      - description: 用户 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "404":
+          description: 用户不存在
+          schema:
+            $ref: '#/definitions/utils.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 删除用户
+      tags:
+      - 用户管理
+    get:
+      consumes:
+      - application/json
+      description: 根据 ID 获取指定用户的详细信息
+      parameters:
+      - description: 用户 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.User'
+              type: object
+        "404":
+          description: 用户不存在
+          schema:
+            $ref: '#/definitions/utils.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 获取用户详情
+      tags:
+      - 用户管理
+    put:
+      consumes:
+      - application/json
+      description: 管理员修改用户的基本信息、角色或状态
+      parameters:
+      - description: 用户 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 更新用户请求体
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/v1.UpdateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.User'
+              type: object
+        "404":
+          description: 用户不存在
+          schema:
+            $ref: '#/definitions/utils.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 更新用户
+      tags:
+      - 用户管理
+  /ai/chat/stream:
+    post:
+      consumes:
+      - application/json
+      description: 与 AI 音乐助手进行流式对话，支持实时文本输出和最后返回推荐歌曲
+      parameters:
+      - description: 聊天请求参数
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/v1.AIChatRequest'
+      produces:
+      - text/event-stream
+      responses:
+        "200":
+          description: SSE 事件流
+          schema:
+            type: string
+      summary: AI 聊天 (流式)
+      tags:
+      - AI 助手
+  /ai/status:
+    get:
+      consumes:
+      - application/json
+      description: 检查当前 AI 服务及模型的可用性
+      parameters:
+      - description: AI 服务地址
+        in: query
+        name: baseUrl
+        type: string
+      - description: 模型名称
+        in: query
+        name: model
+        type: string
+      - description: 服务类型：auto/ollama/openai
+        in: query
+        name: provider
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/utils.Response'
+      summary: 获取 AI 状态
+      tags:
+      - AI 助手
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: 验证用户名和密码并返回 JWT Token
+      parameters:
+      - description: 登录信息
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/v1.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 登录成功
+          schema:
+            $ref: '#/definitions/utils.Response'
+      summary: 用户登录
+      tags:
+      - 用户管理
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: 允许新用户创建账号（如果系统配置允许）
+      parameters:
+      - description: 注册信息
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/v1.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: 注册成功
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "400":
+          description: 参数错误
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "403":
+          description: 注册已关闭
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "409":
+          description: 用户名已存在
+          schema:
+            $ref: '#/definitions/utils.Response'
+      summary: 用户注册
+      tags:
+      - 用户管理
+  /config:
+    get:
+      consumes:
+      - application/json
+      description: 获取访客可见的系统公开配置
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            $ref: '#/definitions/utils.Response'
+      summary: 获取公开配置
+      tags:
+      - 系统模块
+  /play-histories:
+    post:
+      consumes:
+      - application/json
+      description: 记录用户播放歌曲的行为，用于个性化推荐
+      parameters:
+      - description: 播放历史信息
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/v1.RecordPlayHistoryReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 记录成功
+          schema:
+            $ref: '#/definitions/utils.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 记录播放历史
+      tags:
+      - 推荐系统
+  /playlists:
+    post:
+      consumes:
+      - multipart/form-data
+      description: 创建一个新的个人歌单
+      parameters:
+      - description: 歌单标题
+        in: formData
+        name: title
+        required: true
+        type: string
+      - description: 歌单描述
+        in: formData
+        name: description
+        type: string
+      - default: true
+        description: 是否公开
+        in: formData
+        name: isPublic
+        type: boolean
+      - description: 封面文件
+        in: formData
+        name: coverFile
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 创建成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.Playlist'
+              type: object
+        "401":
+          description: 未授权
+          schema:
+            $ref: '#/definitions/utils.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 创建歌单
+      tags:
+      - 歌单管理
+  /playlists/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: 删除指定的个人歌单
+      parameters:
+      - description: 歌单 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 删除成功
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "403":
+          description: 无权删除
+          schema:
+            $ref: '#/definitions/utils.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 删除歌单
+      tags:
+      - 歌单管理
+    get:
+      consumes:
+      - application/json
+      description: 获取歌单信息及其包含的所有歌曲列表
+      parameters:
+      - description: 歌单 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "403":
+          description: 私密歌单无权访问
+          schema:
+            $ref: '#/definitions/utils.Response'
+      summary: 获取歌单详情
+      tags:
+      - 歌单管理
+    put:
+      consumes:
+      - multipart/form-data
+      description: 修改歌单的基本信息或封面
+      parameters:
+      - description: 歌单 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 歌单标题
+        in: formData
+        name: title
+        type: string
+      - description: 歌单描述
+        in: formData
+        name: description
+        type: string
+      - description: 是否公开
+        in: formData
+        name: isPublic
+        type: boolean
+      - description: 新封面文件
+        in: formData
+        name: coverFile
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 更新成功
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "403":
+          description: 无权修改
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "404":
+          description: 歌单不存在
+          schema:
+            $ref: '#/definitions/utils.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 更新歌单
+      tags:
+      - 歌单管理
+  /playlists/{id}/songs:
+    post:
+      consumes:
+      - application/json
+      description: 将指定歌曲加入到你的歌单中
+      parameters:
+      - description: 歌单 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 歌曲信息
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/v1.AddSongReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 添加成功
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "400":
+          description: 参数错误或已存在
+          schema:
+            $ref: '#/definitions/utils.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 向歌单添加歌曲
+      tags:
+      - 歌单管理
+  /playlists/{id}/songs/{songId}:
+    delete:
+      consumes:
+      - application/json
+      description: 将歌曲从指定歌单中移除
+      parameters:
+      - description: 歌单 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 歌曲 ID
+        in: path
+        name: songId
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 移除成功
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "403":
+          description: 无权操作
+          schema:
+            $ref: '#/definitions/utils.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 从歌单移除歌曲
+      tags:
+      - 歌单管理
+  /playlists/my:
+    get:
+      consumes:
+      - application/json
+      description: 获取当前登录用户创建的所有歌单
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/model.Playlist'
+                  type: array
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: 获取我的歌单
+      tags:
+      - 歌单管理
+  /playlists/recommended:
+    get:
+      consumes:
+      - application/json
+      description: 首页展示的热门公开歌单
+      parameters:
+      - default: 1
+        description: 页码
+        in: query
+        name: pageIndex
+        type: integer
+      - default: 4
+        description: 每页数量
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/utils.Response'
+      summary: 获取推荐歌单
+      tags:
+      - 歌单管理
+  /playlists/search:
+    get:
+      consumes:
+      - application/json
+      description: 根据关键字搜索所有公开歌单
+      parameters:
+      - description: 关键字
+        in: query
+        name: keyword
+        type: string
+      - default: 1
+        description: 页码
+        in: query
+        name: pageIndex
+        type: integer
+      - default: 10
+        description: 每页数量
+        in: query
+        name: pageSize
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/utils.Response'
+      summary: 搜索歌单
+      tags:
+      - 歌单管理
+  /recommendations/daily:
+    get:
+      consumes:
+      - application/json
+      description: 根据用户的听歌偏好生成每日推荐歌曲列表
+      parameters:
+      - default: 20
+        description: 推荐数量
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            $ref: '#/definitions/utils.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 获取每日推荐
+      tags:
+      - 推荐系统
+  /song-likes:
+    get:
+      consumes:
+      - application/json
+      description: 获取当前用户已点赞的所有歌曲列表
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 查询成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/model.Song'
+                  type: array
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: 获取我的收藏
+      tags:
+      - 收藏与点赞
+  /song-likes/{songId}:
+    get:
+      consumes:
+      - application/json
+      description: 检查当前登录用户是否已点赞指定歌曲
+      parameters:
+      - description: 歌曲 ID
+        in: path
+        name: songId
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 查询成功
+          schema:
+            $ref: '#/definitions/utils.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 查询点赞状态
+      tags:
+      - 收藏与点赞
+    post:
+      consumes:
+      - application/json
+      description: 对指定的歌曲进行点赞或取消点赞
+      parameters:
+      - description: 歌曲 ID
+        in: path
+        name: songId
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 操作成功
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "404":
+          description: 歌曲不存在
+          schema:
+            $ref: '#/definitions/utils.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 切换点赞状态
+      tags:
+      - 收藏与点赞
+  /songs:
+    get:
+      consumes:
+      - application/json
+      description: 支持按关键字搜索和分页排序
+      parameters:
+      - description: 搜索关键字
+        in: query
+        name: keyword
+        type: string
+      - default: 1
+        description: 页码
+        in: query
+        name: pageIndex
+        type: integer
+      - default: 10
+        description: 每页数量
+        in: query
+        name: pageSize
+        type: integer
+      - default: upload_at
+        description: 排序字段
+        in: query
+        name: sortBy
+        type: string
+      - default: desc
+        description: 排序方式
+        enum:
+        - asc
+        - desc
+        in: query
+        name: order
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            $ref: '#/definitions/utils.Response'
+      summary: 获取歌曲列表
+      tags:
+      - 歌曲管理
+  /songs/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: 根据 ID 删除歌曲记录及相关文件（需管理员权限）
+      parameters:
+      - description: 歌曲 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 删除成功
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "404":
+          description: 歌曲未找到
+          schema:
+            $ref: '#/definitions/utils.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 删除歌曲
+      tags:
+      - 歌曲管理
+    get:
+      consumes:
+      - application/json
+      description: 根据歌曲 ID 获取歌曲完整信息
+      parameters:
+      - description: 歌曲 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.Song'
+              type: object
+        "400":
+          description: 无效的 ID
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "404":
+          description: 歌曲未找到
+          schema:
+            $ref: '#/definitions/utils.Response'
+      summary: 获取歌曲详情
+      tags:
+      - 歌曲管理
+    put:
+      consumes:
+      - multipart/form-data
+      description: 修改现有歌曲的信息或替换相关文件（需管理员权限）
+      parameters:
+      - description: 歌曲 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 歌曲标题
+        in: formData
+        name: title
+        type: string
+      - description: 艺术家
+        in: formData
+        name: artist
+        type: string
+      - description: 专辑
+        in: formData
+        name: album
+        type: string
+      - description: 新歌曲音频文件
+        in: formData
+        name: file
+        type: file
+      - description: 新封面图片
+        in: formData
+        name: cover
+        type: file
+      - description: 新歌词文件
+        in: formData
+        name: lyric
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 更新成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.Song'
+              type: object
+        "400":
+          description: 参数错误
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "404":
+          description: 歌曲未找到
+          schema:
+            $ref: '#/definitions/utils.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 更新歌曲
+      tags:
+      - 歌曲管理
+  /songs/export:
+    post:
+      description: 整理数据库中所有歌曲（含歌词、封面）并打包为 Zip 直接下载
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: 歌曲压缩包
+          schema:
+            type: file
+        "404":
+          description: 没有可导出的歌曲
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "500":
+          description: 导出失败
+          schema:
+            $ref: '#/definitions/utils.Response'
+      summary: 一键下载所有歌曲包
+      tags:
+      - 歌曲管理
+  /songs/upload:
+    post:
+      consumes:
+      - multipart/form-data
+      description: 上传音频文件及其相关信息（需管理员权限）
+      parameters:
+      - description: 歌曲标题
+        in: formData
+        name: title
+        required: true
+        type: string
+      - description: 艺术家
+        in: formData
+        name: artist
+        required: true
+        type: string
+      - description: 专辑
+        in: formData
+        name: album
+        type: string
+      - description: 歌曲音频文件
+        in: formData
+        name: file
+        required: true
+        type: file
+      - description: 封面图片
+        in: formData
+        name: cover
+        type: file
+      - description: 歌词文件
+        in: formData
+        name: lyric
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: 上传成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.Song'
+              type: object
+        "400":
+          description: 参数错误
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/utils.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 上传歌曲
+      tags:
+      - 歌曲管理
+  /user/avatar:
+    post:
+      consumes:
+      - multipart/form-data
+      description: 用户上传自定义头像文件
+      parameters:
+      - description: 头像图片文件
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 头像更新成功
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "400":
+          description: 未提供文件
+          schema:
+            $ref: '#/definitions/utils.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 上传头像
+      tags:
+      - 用户接口
+  /user/password:
+    put:
+      consumes:
+      - application/json
+      description: 允许登录用户修改其登录密码
+      parameters:
+      - description: 修改密码请求参数
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/v1.ChangePasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 密码修改成功
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "401":
+          description: 未登录或旧密码错误
+          schema:
+            $ref: '#/definitions/utils.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 修改密码
+      tags:
+      - 用户接口
+  /user/profile:
+    get:
+      consumes:
+      - application/json
+      description: 获取当前登录用户的详细档案
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.User'
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: 获取个人信息
+      tags:
+      - 用户接口
+  /ws/admin/notifications:
+    get:
+      description: 管理员通过 WebSocket 接收系统实时通知（如新歌单审核通知）
+      parameters:
+      - description: JWT 访问令牌
+        in: query
+        name: token
+        required: true
+        type: string
+      responses:
+        "101":
+          description: Switching Protocols
+          schema:
+            type: string
+      summary: WebSocket 通知
+      tags:
+      - 系统模块
+schemes:
+- http
+securityDefinitions:
+  ApiKeyAuth:
+    description: JWT Token，格式：Bearer <token>
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

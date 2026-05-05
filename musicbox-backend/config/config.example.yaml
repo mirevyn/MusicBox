@@ -1,0 +1,34 @@
+# 后端服务配置
+server:
+  http_addr: ":8000"
+  gin_mode: "debug"
+
+# MySQL 数据库配置
+mysql:
+  dsn: "root:your_password@tcp(127.0.0.1:3306)/music_box?charset=utf8mb4&parseTime=True&loc=Local"
+
+# JWT 配置
+jwt:
+  secret: "replace_with_your_jwt_secret"
+  expires_time: 24 # 小时
+
+# 文件上传路径配置
+upload:
+  song_path: "uploads/music"
+  cover_path: "uploads/covers"
+  lyric_path: "uploads/lyrics"
+  avatar_path: "uploads/avatars"
+
+# CORS 配置
+cors:
+  allowed_origins:
+    - "http://localhost:5173"
+
+# AI 配置
+# 本地开发时，如果 Ollama 就跑在本机，推荐使用 127.0.0.1
+ai:
+  base_url: "http://127.0.0.1:11434"
+  model: "qwen2.5:7b"
+  provider: "ollama"
+  api_key: ""
+  request_timeout_seconds: 300
