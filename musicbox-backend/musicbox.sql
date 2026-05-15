@@ -110,9 +110,8 @@ CREATE TABLE `system_settings` (
 -- ==========================================
 
 INSERT INTO `users` (`id`, `username`, `password_hash`, `avatar_url`, `role`, `status`) VALUES
-(1, 'admin', '$2a$10$emZD53.StcoycaaBcIXGg.CcPKQMUl0d5FCHCVznV8xMq.ikHPNJe', 'uploads/avatars/1.jpg', 'Admin', 1)
+(1, 'admin', '$2a$10$emZD53.StcoycaaBcIXGg.CcPKQMUl0d5FCHCVznV8xMq.ikHPNJe', NULL, 'Admin', 1)
 ON DUPLICATE KEY UPDATE
-  `avatar_url` = VALUES(`avatar_url`),
   `role` = VALUES(`role`),
   `status` = VALUES(`status`);
 
